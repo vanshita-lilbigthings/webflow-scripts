@@ -21,7 +21,7 @@ async function deploy() {
     canCopy: true,
     displayName: 'navbar',
     version: `1.0.${Date.now()}`,
-    integrityHash: null,
+    integrityHash: '',
   });
 
   const scriptId = register.data.id;
