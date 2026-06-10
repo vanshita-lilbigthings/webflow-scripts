@@ -2,7 +2,8 @@ const axios = require('axios');
 
 const TOKEN = process.env.WEBFLOW_ACCESS_TOKEN;
 const SITE_ID = process.env.WEBFLOW_SITE_ID;
-const CDN_URL = 'https://cdn.jsdelivr.net/gh/vanshita-lilbigthings/webflow-scripts@main/dist/navbar.iife.js';
+const CDN_URL =
+  'https://cdn.jsdelivr.net/gh/vanshita-lilbigthings/webflow-scripts@main/dist/navbar.iife.js';
 
 async function deploy() {
   const client = axios.create({
@@ -14,13 +15,16 @@ async function deploy() {
   });
 
   console.log('Registering script with Webflow...');
-  const register = await client.post(`/sites/${SITE_ID}/registered_scripts/hosted`, {
-    hostedLocation: CDN_URL,
-    integrityFingerprint: null,
-    canCopy: true,
-    displayName: 'navbar',
-    version: `1.0.${Date.now()}`,
-  });
+  const register = await client.post(
+    `/sites/${SITE_ID}/registered_scripts/hosted`,
+    {
+      hostedLocation: CDN_URL,
+      integrityFingerprint: null,
+      canCopy: true,
+      displayName: 'navbar',
+      version: `1.0.${Date.now()}`,
+    }
+  );
 
   const scriptId = register.data.id;
   console.log(`Script registered with ID: ${scriptId}`);
