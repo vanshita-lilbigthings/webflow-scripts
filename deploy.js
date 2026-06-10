@@ -15,16 +15,14 @@ async function deploy() {
   });
 
   console.log('Registering script with Webflow...');
-  const register = await client.post(
-    `/sites/${SITE_ID}/registered_scripts/hosted`,
-    {
-      hostedLocation: CDN_URL,
-      integrityFingerprint: null,
-      canCopy: true,
-      displayName: 'navbar',
-      version: `1.0.${Date.now()}`,
-    }
-  );
+  const register = await client.post(`/sites/${SITE_ID}/registered_scripts/hosted`, {
+    hostedLocation: CDN_URL,
+    integrityFingerprint: null,
+    canCopy: true,
+    displayName: 'navbar',
+    version: `1.0.${Date.now()}`,
+    integrityHash: null,
+  });
 
   const scriptId = register.data.id;
   console.log(`Script registered with ID: ${scriptId}`);
