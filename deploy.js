@@ -30,7 +30,7 @@ async function deploy() {
   console.log('Registering script with Webflow...');
   const register = await client.post(`/sites/${SITE_ID}/registered_scripts/hosted`, {
     hostedLocation: CDN_URL,
-    integrityFingerprint: integrityHash,   // ← was "integrityHash", wrong field name
+    integrityHash: integrityHash,   // ← was "integrityHash", wrong field name
     canCopy: true,
     displayName: 'navbar',
     version,
