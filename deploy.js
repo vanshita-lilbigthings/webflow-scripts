@@ -45,7 +45,7 @@ async function deploy() {
       {
         id: scriptId,
         location: 'footer',
-        version,                           // ← reuse same version, not a new Date.now()
+        version,
       },
     ],
   });

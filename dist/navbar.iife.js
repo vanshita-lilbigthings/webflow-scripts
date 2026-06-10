@@ -1,0 +1,1 @@
+(function(){Webflow.push(function(){let e=document.querySelector(`.navbar`);e&&(console.log(undefinedVariable),window.addEventListener(`scroll`,function(){window.scrollY>50?e.classList.add(`navbar--scrolled`):e.classList.remove(`navbar--scrolled`)}))})})();
