@@ -8,7 +8,7 @@ const CDN_URL =
 
 async function getSRIHash(url) {
   const response = await axios.get(url, { responseType: 'arraybuffer' });
-  const hash = crypto.createHash('sha256').update(response.data).digest('base64');
+  const hash = crypto.createHash('sha256').update(Buffer.from(response.data)).digest('base64');
   return `sha256-${hash}`;
 }
 
@@ -25,13 +25,15 @@ async function deploy() {
   const integrityHash = await getSRIHash(CDN_URL);
   console.log(`Hash: ${integrityHash}`);
 
+  const version = `1.0.${Date.now()}`;
+
   console.log('Registering script with Webflow...');
   const register = await client.post(`/sites/${SITE_ID}/registered_scripts/hosted`, {
     hostedLocation: CDN_URL,
-    integrityHash,
+    integrityFingerprint: integrityHash,   // ← was "integrityHash", wrong field name
     canCopy: true,
     displayName: 'navbar',
-    version: `1.0.${Date.now()}`,
+    version,
   });
 
   const scriptId = register.data.id;
@@ -43,7 +45,7 @@ async function deploy() {
       {
         id: scriptId,
         location: 'footer',
-        version: `1.0.${Date.now()}`,
+        version,                           // ← reuse same version, not a new Date.now()
       },
     ],
   });
