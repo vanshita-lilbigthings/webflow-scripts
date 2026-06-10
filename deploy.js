@@ -1,9 +1,16 @@
 const axios = require('axios');
+const crypto = require('crypto');
 
 const TOKEN = process.env.WEBFLOW_ACCESS_TOKEN;
 const SITE_ID = process.env.WEBFLOW_SITE_ID;
 const CDN_URL =
   'https://cdn.jsdelivr.net/gh/vanshita-lilbigthings/webflow-scripts@main/dist/navbar.iife.js';
+
+async function getSRIHash(url) {
+  const response = await axios.get(url, { responseType: 'arraybuffer' });
+  const hash = crypto.createHash('sha256').update(response.data).digest('base64');
+  return `sha256-${hash}`;
+}
 
 async function deploy() {
   const client = axios.create({
@@ -14,14 +21,17 @@ async function deploy() {
     },
   });
 
+  console.log('Generating SRI hash...');
+  const integrityHash = await getSRIHash(CDN_URL);
+  console.log(`Hash: ${integrityHash}`);
+
   console.log('Registering script with Webflow...');
   const register = await client.post(`/sites/${SITE_ID}/registered_scripts/hosted`, {
     hostedLocation: CDN_URL,
-    integrityFingerprint: null,
+    integrityHash,
     canCopy: true,
     displayName: 'navbar',
     version: `1.0.${Date.now()}`,
-    integrityHash: '',
   });
 
   const scriptId = register.data.id;
