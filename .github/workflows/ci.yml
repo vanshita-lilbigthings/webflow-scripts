@@ -61,6 +61,7 @@ jobs:
         env:
           WEBFLOW_ACCESS_TOKEN: ${{ secrets.WEBFLOW_ACCESS_TOKEN }}
           WEBFLOW_SITE_ID: ${{ secrets.WEBFLOW_SITE_ID }}
+          WEBFLOW_SITE_TOKEN: ${{ secrets.WEBFLOW_SITE_TOKEN }}
         run: node deploy.js
   test:
     name: Run Tests

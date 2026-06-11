@@ -4,6 +4,7 @@ const fs = require('fs');
 
 const TOKEN = process.env.WEBFLOW_ACCESS_TOKEN;
 const SITE_ID = process.env.WEBFLOW_SITE_ID;
+const SITE_TOKEN = process.env.WEBFLOW_SITE_TOKEN;
 const REPO = 'vanshita-lilbigthings/webflow-scripts';
 const BRANCH = 'main';
 
@@ -71,12 +72,18 @@ async function deploy() {
   });
 
   console.log('Publishing Webflow site...');
-  await client.post(`/sites/${SITE_ID}/publish`, {
+  const publishClient = axios.create({
+    baseURL: 'https://api.webflow.com/v2',
+    headers: {
+      Authorization: `Bearer ${SITE_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+  });
+  await publishClient.post(`/sites/${SITE_ID}/publish`, {
     customDomains: [],
     subDomain: true,
   });
   console.log('Site published!');
-
   console.log('Done! All scripts applied to Webflow site.');
 }
 
