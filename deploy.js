@@ -81,7 +81,7 @@ async function deploy() {
   });
   await publishClient.post(`/sites/${SITE_ID}/publish`, {
     customDomains: [],
-    subDomain: true,
+    publishToWebflowSubdomain: true,
   });
   console.log('Site published!');
   console.log('Done! All scripts applied to Webflow site.');
