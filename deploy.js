@@ -70,6 +70,13 @@ async function deploy() {
     scripts: registeredScripts,
   });
 
+  console.log('Publishing Webflow site...');
+  await client.post(`/sites/${SITE_ID}/publish`, {
+    customDomains: [],
+    subDomain: true,
+  });
+  console.log('Site published!');
+
   console.log('Done! All scripts applied to Webflow site.');
 }
 
