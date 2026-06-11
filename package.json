@@ -9,7 +9,7 @@
     "test:all": "jest --forceExit",
     "lint": "eslint src/",
     "format": "prettier --write .",
-    "build": "vite build"
+    "build": "node build.mjs"
   },
   "repository": {
     "type": "git",
