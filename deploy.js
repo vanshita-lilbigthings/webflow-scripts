@@ -8,7 +8,10 @@ const CDN_URL =
 
 async function getSRIHash(url) {
   const response = await axios.get(url, { responseType: 'arraybuffer' });
-  const hash = crypto.createHash('sha256').update(Buffer.from(response.data)).digest('base64');
+  const hash = crypto
+    .createHash('sha256')
+    .update(Buffer.from(response.data))
+    .digest('base64');
   return `sha256-${hash}`;
 }
 
@@ -28,13 +31,16 @@ async function deploy() {
   const version = `1.0.${Date.now()}`;
 
   console.log('Registering script with Webflow...');
-  const register = await client.post(`/sites/${SITE_ID}/registered_scripts/hosted`, {
-    hostedLocation: CDN_URL,
-    integrityHash,
-    canCopy: true,
-    displayName: 'navbar',
-    version,
-  });
+  const register = await client.post(
+    `/sites/${SITE_ID}/registered_scripts/hosted`,
+    {
+      hostedLocation: CDN_URL,
+      integrityHash,
+      canCopy: true,
+      displayName: 'navbar',
+      version,
+    }
+  );
 
   const scriptId = register.data.id;
   console.log(`Script registered with ID: ${scriptId}`);

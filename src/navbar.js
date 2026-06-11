@@ -2,7 +2,6 @@ Webflow.push(function () {
   const navbar = document.querySelector('.navbar');
 
   if (!navbar) return;
-  console.log(undefinedVariable);
 
   window.addEventListener('scroll', function () {
     if (window.scrollY > 50) {
