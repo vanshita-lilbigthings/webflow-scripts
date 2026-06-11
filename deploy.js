@@ -1,10 +1,19 @@
 const axios = require('axios');
 const crypto = require('crypto');
+const fs = require('fs');
 
 const TOKEN = process.env.WEBFLOW_ACCESS_TOKEN;
 const SITE_ID = process.env.WEBFLOW_SITE_ID;
-const CDN_URL =
-  'https://cdn.jsdelivr.net/gh/vanshita-lilbigthings/webflow-scripts@main/dist/navbar.iife.js';
+const REPO = 'vanshita-lilbigthings/webflow-scripts';
+const BRANCH = 'main';
+
+const client = axios.create({
+  baseURL: 'https://api.webflow.com/v2',
+  headers: {
+    Authorization: `Bearer ${TOKEN}`,
+    'Content-Type': 'application/json',
+  },
+});
 
 async function getSRIHash(url) {
   const response = await axios.get(url, { responseType: 'arraybuffer' });
@@ -16,47 +25,52 @@ async function getSRIHash(url) {
 }
 
 async function deploy() {
-  const client = axios.create({
-    baseURL: 'https://api.webflow.com/v2',
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  const distFiles = fs
+    .readdirSync('./dist')
+    .filter((f) => f.endsWith('.iife.js'));
 
-  console.log('Generating SRI hash...');
-  const integrityHash = await getSRIHash(CDN_URL);
-  console.log(`Hash: ${integrityHash}`);
+  console.log(`Found ${distFiles.length} scripts to deploy:`, distFiles);
 
-  const version = `1.0.${Date.now()}`;
+  const registeredScripts = [];
 
-  console.log('Registering script with Webflow...');
-  const register = await client.post(
-    `/sites/${SITE_ID}/registered_scripts/hosted`,
-    {
-      hostedLocation: CDN_URL,
-      integrityHash,
-      canCopy: true,
-      displayName: 'navbar',
-      version,
-    }
-  );
+  for (const file of distFiles) {
+    const name = file.replace('.iife.js', '');
+    const cdnUrl = `https://cdn.jsdelivr.net/gh/${REPO}@${BRANCH}/dist/${file}`;
+    const version = `1.0.${Date.now()}`;
 
-  const scriptId = register.data.id;
-  console.log(`Script registered with ID: ${scriptId}`);
+    console.log(`\nDeploying ${name}...`);
+    console.log(`CDN URL: ${cdnUrl}`);
 
-  console.log('Applying script to site...');
-  await client.put(`/sites/${SITE_ID}/custom_code`, {
-    scripts: [
+    console.log('Generating SRI hash...');
+    const integrityHash = await getSRIHash(cdnUrl);
+    console.log(`Hash: ${integrityHash}`);
+
+    console.log('Registering script...');
+    const register = await client.post(
+      `/sites/${SITE_ID}/registered_scripts/hosted`,
       {
-        id: scriptId,
-        location: 'footer',
+        hostedLocation: cdnUrl,
+        integrityHash,
+        canCopy: true,
+        displayName: `${name}${Date.now()}`,
         version,
-      },
-    ],
+      }
+    );
+
+    console.log(`Registered with ID: ${register.data.id}`);
+    registeredScripts.push({
+      id: register.data.id,
+      location: 'footer',
+      version,
+    });
+  }
+
+  console.log('\nApplying all scripts to site...');
+  await client.put(`/sites/${SITE_ID}/custom_code`, {
+    scripts: registeredScripts,
   });
 
-  console.log('Done! Script applied to Webflow site.');
+  console.log('Done! All scripts applied to Webflow site.');
 }
 
 deploy().catch((err) => {
