@@ -6,7 +6,7 @@ const TOKEN = process.env.WEBFLOW_ACCESS_TOKEN;
 const SITE_ID = process.env.WEBFLOW_SITE_ID;
 const SITE_TOKEN = process.env.WEBFLOW_SITE_TOKEN;
 const REPO = 'vanshita-lilbigthings/webflow-scripts';
-const BRANCH = 'main';
+const BRANCH = '569595e4cd798db7b68007dbfee98cd59f0c4bbc';
 
 const client = axios.create({
   baseURL: 'https://api.webflow.com/v2',

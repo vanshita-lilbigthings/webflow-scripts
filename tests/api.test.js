@@ -81,7 +81,7 @@ describe('Webflow Scripts API', () => {
       ],
     });
     expect(response.status).toBe(200);
-  });
+  });//
 
   test('Applied script appears in site custom code', async () => {
     const response = await client.get(`/sites/${SITE_ID}/custom_code`);
