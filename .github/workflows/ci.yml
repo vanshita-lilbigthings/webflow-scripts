@@ -57,12 +57,15 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+      - name: Wait for jsDelivr to propagate
+        run: sleep 60
       - name: Register and apply script to Webflow
         env:
           WEBFLOW_ACCESS_TOKEN: ${{ secrets.WEBFLOW_ACCESS_TOKEN }}
           WEBFLOW_SITE_ID: ${{ secrets.WEBFLOW_SITE_ID }}
           WEBFLOW_SITE_TOKEN: ${{ secrets.WEBFLOW_SITE_TOKEN }}
         run: node deploy.js
+
   test:
     name: Run Tests
     runs-on: ubuntu-latest
