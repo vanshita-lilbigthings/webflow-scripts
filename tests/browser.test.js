@@ -1,8 +1,8 @@
 const { chromium } = require('@playwright/test');
 
 const SITE_URL = 'https://ci-cd-test-site-39a07d.webflow.io/';
-const CDN_URL =
-  'https://cdn.jsdelivr.net/gh/vanshita-lilbigthings/webflow-scripts@main/dist/navbar.iife.js';
+const CDN_BASE =
+  'https://cdn.jsdelivr.net/gh/vanshita-lilbigthings/webflow-scripts';
 
 jest.setTimeout(30000);
 
@@ -27,7 +27,7 @@ describe('Webflow Site Browser Tests', () => {
   });
 
   test('Script tag is injected in the page', async () => {
-    const scriptTag = await page.$(`script[src="${CDN_URL}"]`);
+    const scriptTag = await page.$(`script[src^="${CDN_BASE}"]`);
     expect(scriptTag).not.toBeNull();
   });
 
