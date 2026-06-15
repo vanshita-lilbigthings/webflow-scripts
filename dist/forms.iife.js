@@ -1,5 +1,1 @@
-(function () {
-  Webflow.push(function () {
-    console.log(`forms script loaded`);
-  });
-})();
+(function(){Webflow.push(function(){console.log(`forms script loaded`)})})();
