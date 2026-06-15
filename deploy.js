@@ -16,12 +16,6 @@ const client = axios.create({
   },
 });
 
-function getLocalSRIHash(file) {
-  const content = fs.readFileSync(`./dist/${file}`);
-  const hash = crypto.createHash('sha256').update(content).digest('base64');
-  return `sha256-${hash}`;
-}
-
 async function waitForCDN(url, retries = 20, delayMs = 30000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -30,11 +24,20 @@ async function waitForCDN(url, retries = 20, delayMs = 30000) {
     } catch (err) {
       if (attempt === retries) throw err;
       console.log(
-        `CDN not ready (attempt ${attempt}/${retries}), retrying in ${delayMs / 1000}s...`
+        `[${url.split('/').pop()}] not ready (${attempt}/${retries}), retrying in ${delayMs / 1000}s...`
       );
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
   }
+}
+
+async function getSRIHash(url) {
+  const response = await axios.get(url, { responseType: 'arraybuffer' });
+  const hash = crypto
+    .createHash('sha256')
+    .update(Buffer.from(response.data))
+    .digest('base64');
+  return `sha256-${hash}`;
 }
 
 async function deploy() {
@@ -44,6 +47,14 @@ async function deploy() {
 
   console.log(`Found ${distFiles.length} scripts to deploy:`, distFiles);
 
+  console.log('\nWaiting for CDN to serve all files...');
+  await Promise.all(
+    distFiles.map((file) =>
+      waitForCDN(`https://cdn.jsdelivr.net/gh/${REPO}@${SHA}/dist/${file}`)
+    )
+  );
+  console.log('All CDN files ready.\n');
+
   const registeredScripts = [];
 
   for (const file of distFiles) {
@@ -51,14 +62,11 @@ async function deploy() {
     const cdnUrl = `https://cdn.jsdelivr.net/gh/${REPO}@${SHA}/dist/${file}`;
     const version = `1.0.${Date.now()}`;
 
-    console.log(`\nDeploying ${name}...`);
+    console.log(`Deploying ${name}...`);
     console.log(`CDN URL: ${cdnUrl}`);
 
-    const integrityHash = getLocalSRIHash(file);
+    const integrityHash = await getSRIHash(cdnUrl);
     console.log(`Hash: ${integrityHash}`);
-
-    console.log('Waiting for CDN...');
-    await waitForCDN(cdnUrl);
 
     console.log('Registering script...');
     const register = await client.post(
