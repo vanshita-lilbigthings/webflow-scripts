@@ -16,15 +16,17 @@ const client = axios.create({
   },
 });
 
-async function getSRIHash(url, retries = 10, delayMs = 15000) {
+function getLocalSRIHash(file) {
+  const content = fs.readFileSync(`./dist/${file}`);
+  const hash = crypto.createHash('sha256').update(content).digest('base64');
+  return `sha256-${hash}`;
+}
+
+async function waitForCDN(url, retries = 20, delayMs = 30000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      const response = await axios.get(url, { responseType: 'arraybuffer' });
-      const hash = crypto
-        .createHash('sha256')
-        .update(Buffer.from(response.data))
-        .digest('base64');
-      return `sha256-${hash}`;
+      await axios.get(url, { responseType: 'arraybuffer' });
+      return;
     } catch (err) {
       if (attempt === retries) throw err;
       console.log(
@@ -52,9 +54,11 @@ async function deploy() {
     console.log(`\nDeploying ${name}...`);
     console.log(`CDN URL: ${cdnUrl}`);
 
-    console.log('Generating SRI hash...');
-    const integrityHash = await getSRIHash(cdnUrl);
+    const integrityHash = getLocalSRIHash(file);
     console.log(`Hash: ${integrityHash}`);
+
+    console.log('Waiting for CDN...');
+    await waitForCDN(cdnUrl);
 
     console.log('Registering script...');
     const register = await client.post(
