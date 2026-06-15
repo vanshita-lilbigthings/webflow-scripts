@@ -53,17 +53,39 @@ jobs:
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
       - run: npm install
+
+      - name: Download built dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Commit and push dist to repo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f dist/
+          git diff --staged --quiet || git commit -m "chore: update dist [skip ci]"
+          git push
+          echo "DEPLOY_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+
       - name: Wait for jsDelivr to propagate
         run: sleep 60
+
       - name: Register and apply script to Webflow
         env:
           WEBFLOW_ACCESS_TOKEN: ${{ secrets.WEBFLOW_ACCESS_TOKEN }}
           WEBFLOW_SITE_ID: ${{ secrets.WEBFLOW_SITE_ID }}
           WEBFLOW_SITE_TOKEN: ${{ secrets.WEBFLOW_SITE_TOKEN }}
+          GITHUB_SHA: ${{ env.DEPLOY_SHA }}
         run: node deploy.js
 
   test:

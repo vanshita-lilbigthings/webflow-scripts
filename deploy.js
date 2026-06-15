@@ -6,7 +6,7 @@ const TOKEN = process.env.WEBFLOW_ACCESS_TOKEN;
 const SITE_ID = process.env.WEBFLOW_SITE_ID;
 const SITE_TOKEN = process.env.WEBFLOW_SITE_TOKEN;
 const REPO = 'vanshita-lilbigthings/webflow-scripts';
-const BRANCH = process.env.GITHUB_SHA ?? 'main';
+const SHA = process.env.GITHUB_SHA ?? 'main';
 
 const client = axios.create({
   baseURL: 'https://api.webflow.com/v2',
@@ -36,7 +36,7 @@ async function deploy() {
 
   for (const file of distFiles) {
     const name = file.replace('.iife.js', '');
-    const cdnUrl = `https://cdn.jsdelivr.net/gh/${REPO}@${BRANCH}/dist/${file}`;
+    const cdnUrl = `https://cdn.jsdelivr.net/gh/${REPO}@${SHA}/dist/${file}`;
     const version = `1.0.${Date.now()}`;
 
     console.log(`\nDeploying ${name}...`);
