@@ -16,13 +16,23 @@ const client = axios.create({
   },
 });
 
-async function getSRIHash(url) {
-  const response = await axios.get(url, { responseType: 'arraybuffer' });
-  const hash = crypto
-    .createHash('sha256')
-    .update(Buffer.from(response.data))
-    .digest('base64');
-  return `sha256-${hash}`;
+async function getSRIHash(url, retries = 10, delayMs = 15000) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await axios.get(url, { responseType: 'arraybuffer' });
+      const hash = crypto
+        .createHash('sha256')
+        .update(Buffer.from(response.data))
+        .digest('base64');
+      return `sha256-${hash}`;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      console.log(
+        `CDN not ready (attempt ${attempt}/${retries}), retrying in ${delayMs / 1000}s...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
 }
 
 async function deploy() {
@@ -88,6 +98,9 @@ async function deploy() {
 }
 
 deploy().catch((err) => {
-  console.error(err.response?.data || err.message);
+  const data = err.response?.data;
+  console.error(
+    Buffer.isBuffer(data) ? data.toString('utf8') : data || err.message
+  );
   process.exit(1);
 });
