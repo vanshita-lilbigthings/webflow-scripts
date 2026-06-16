@@ -47,7 +47,17 @@ async function deploy() {
 
   console.log(`Found ${distFiles.length} scripts to deploy:`, distFiles);
 
-  console.log('\nWaiting for CDN to serve all files...');
+  console.log('\nTriggering jsDelivr indexing for this commit...');
+  try {
+    await axios.get(
+      `https://data.jsdelivr.net/v1/package/gh/${REPO}@${SHA}/flat`
+    );
+    console.log('Indexing triggered.');
+  } catch (_) {
+    console.log('Indexing trigger failed (non-fatal), continuing...');
+  }
+
+  console.log('Waiting for CDN to serve all files...');
   await Promise.all(
     distFiles.map((file) =>
       waitForCDN(`https://cdn.jsdelivr.net/gh/${REPO}@${SHA}/dist/${file}`)
