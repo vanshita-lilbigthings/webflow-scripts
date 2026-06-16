@@ -7,6 +7,7 @@ console.log(`Building ${srcFiles.length} files:`, srcFiles);
 
 for (const file of srcFiles) {
   const name = file.replace('.js', '');
+  const libName = name.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
   await build({
     configFile: false,
     build: {
@@ -14,7 +15,7 @@ for (const file of srcFiles) {
       emptyOutDir: false,
       lib: {
         entry: resolve('./src', file),
-        name,
+        name: libName,
         fileName: name,
         formats: ['iife'],
       },
