@@ -19,11 +19,13 @@ const client = axios.create({
 async function waitForJsDelivr(fileName, commitSha) {
   const url = `https://cdn.jsdelivr.net/gh/${REPO}@${commitSha}/dist/${fileName}`;
 
-  // Initial request to trigger indexing
+  // Purge CDN cache to force jsDelivr to re-fetch from GitHub
+  const purgeUrl = url.replace('cdn.jsdelivr.net', 'purge.jsdelivr.net');
   try {
-    await fetch(url, { method: 'HEAD' });
+    await fetch(purgeUrl);
+    console.log(`Purged jsDelivr cache for ${fileName}`);
   } catch (err) {
-    console.warn(`Initial jsDelivr trigger failed for ${fileName}`);
+    console.warn(`jsDelivr purge failed for ${fileName} (non-fatal)`);
   }
 
   const maxRetries = 20;
