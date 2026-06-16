@@ -78,23 +78,14 @@ jobs:
           git diff --staged --quiet || git commit -m "chore: update dist [skip ci]"
           git pull --rebase origin main
           git push
-          echo "DEPLOY_TAG=deploy-${GITHUB_RUN_ID}" >> $GITHUB_ENV
-
-      - name: Deploy dist to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          destination_dir: releases/${{ env.DEPLOY_TAG }}
-          keep_files: true
-          commit_message: 'deploy ${{ env.DEPLOY_TAG }} [skip ci]'
+          echo "DEPLOY_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Register and apply script to Webflow
         env:
           WEBFLOW_ACCESS_TOKEN: ${{ secrets.WEBFLOW_ACCESS_TOKEN }}
           WEBFLOW_SITE_ID: ${{ secrets.WEBFLOW_SITE_ID }}
           WEBFLOW_SITE_TOKEN: ${{ secrets.WEBFLOW_SITE_TOKEN }}
-          GITHUB_SHA: ${{ env.DEPLOY_TAG }}
+          GITHUB_SHA: ${{ env.DEPLOY_SHA }}
         run: node deploy.js
 
   test-api:

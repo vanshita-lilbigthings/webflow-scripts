@@ -7,8 +7,6 @@ const SITE_ID = process.env.WEBFLOW_SITE_ID;
 const SITE_TOKEN = process.env.WEBFLOW_SITE_TOKEN;
 const REPO = 'vanshita-lilbigthings/webflow-scripts';
 const SHA = process.env.GITHUB_SHA ?? 'main';
-const [OWNER, REPO_NAME] = REPO.split('/');
-const PAGES_BASE = `https://${OWNER}.github.io/${REPO_NAME}/releases/${SHA}`;
 
 const client = axios.create({
   baseURL: 'https://api.webflow.com/v2',
@@ -18,25 +16,58 @@ const client = axios.create({
   },
 });
 
-function getLocalSRIHash(file) {
-  const content = fs.readFileSync(`./dist/${file}`);
-  const hash = crypto.createHash('sha256').update(content).digest('base64');
-  return `sha256-${hash}`;
+async function waitForJsDelivr(fileName, commitSha) {
+  const url = `https://cdn.jsdelivr.net/gh/${REPO}@${commitSha}/dist/${fileName}`;
+
+  // Initial request to trigger indexing
+  try {
+    await fetch(url, { method: 'HEAD' });
+  } catch (err) {
+    console.warn(`Initial jsDelivr trigger failed for ${fileName}`);
+  }
+
+  const maxRetries = 20;
+  const delayMs = 15000;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, { method: 'HEAD' });
+
+      if (response.ok) {
+        console.log(
+          `✓ ${fileName} available on jsDelivr after ${attempt} attempt(s)`
+        );
+        return true;
+      }
+
+      console.log(
+        `Waiting for jsDelivr indexing (${attempt}/${maxRetries}) for ${fileName}`
+      );
+    } catch (err) {
+      console.warn(
+        `Retry ${attempt}/${maxRetries} failed for ${fileName}:`,
+        err.message
+      );
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  console.warn(
+    `⚠ ${fileName} not available on jsDelivr after ${maxRetries} retries. Skipping.`
+  );
+  return false;
 }
 
-async function waitForCDN(url, retries = 10, delayMs = 15000) {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      await axios.get(url, { responseType: 'arraybuffer' });
-      return;
-    } catch (err) {
-      if (attempt === retries) throw err;
-      console.log(
-        `[${url.split('/').pop()}] not ready (${attempt}/${retries}), retrying in ${delayMs / 1000}s...`
-      );
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
-    }
-  }
+async function generateSriHash(fileName, commitSha) {
+  const url = `https://cdn.jsdelivr.net/gh/${REPO}@${commitSha}/dist/${fileName}`;
+  const response = await fetch(url);
+  const buffer = await response.arrayBuffer();
+  const hash = crypto
+    .createHash('sha256')
+    .update(Buffer.from(buffer))
+    .digest('base64');
+  return `sha256-${hash}`;
 }
 
 async function deploy() {
@@ -46,23 +77,19 @@ async function deploy() {
 
   console.log(`Found ${distFiles.length} scripts to deploy:`, distFiles);
 
-  console.log('\nWaiting for GitHub Pages to serve all files...');
-  await Promise.all(
-    distFiles.map((file) => waitForCDN(`${PAGES_BASE}/${file}`))
-  );
-  console.log('All files ready.\n');
-
   const registeredScripts = [];
 
   for (const file of distFiles) {
     const name = file.replace('.iife.js', '');
-    const cdnUrl = `${PAGES_BASE}/${file}`;
+    const cdnUrl = `https://cdn.jsdelivr.net/gh/${REPO}@${SHA}/dist/${file}`;
     const version = `1.0.${Date.now()}`;
 
-    console.log(`Deploying ${name}...`);
-    console.log(`CDN URL: ${cdnUrl}`);
+    console.log(`\nDeploying ${name}...`);
 
-    const integrityHash = getLocalSRIHash(file);
+    const available = await waitForJsDelivr(file, SHA);
+    if (!available) continue;
+
+    const integrityHash = await generateSriHash(file, SHA);
     console.log(`Hash: ${integrityHash}`);
 
     console.log('Registering script...');
@@ -83,6 +110,11 @@ async function deploy() {
       location: 'footer',
       version,
     });
+  }
+
+  if (registeredScripts.length === 0) {
+    console.warn('No scripts registered — skipping apply and publish.');
+    return;
   }
 
   console.log('\nApplying all scripts to site...');
