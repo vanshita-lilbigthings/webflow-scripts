@@ -80,6 +80,26 @@ jobs:
           git push
           echo "DEPLOY_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
+      - name: Verify dist files exist at DEPLOY_SHA
+        run: |
+          echo "DEPLOY_SHA=${{ env.DEPLOY_SHA }}"
+          echo "--- dist/ on disk ---"
+          ls dist/
+          echo "--- dist/ in git at DEPLOY_SHA ---"
+          git ls-tree -r ${{ env.DEPLOY_SHA }} --name-only | grep "^dist/"
+          echo "--- checking each file ---"
+          MISSING=0
+          for f in dist/*.iife.js; do
+            fname=$(basename "$f")
+            if git ls-tree -r ${{ env.DEPLOY_SHA }} --name-only | grep -q "^dist/${fname}$"; then
+              echo "OK   dist/${fname}"
+            else
+              echo "MISSING   dist/${fname}"
+              MISSING=1
+            fi
+          done
+          [ "$MISSING" -eq 0 ] || { echo "ERROR: files missing from commit. Deploy_SHA is wrong."; exit 1; }
+
       - name: Register and apply script to Webflow
         env:
           WEBFLOW_ACCESS_TOKEN: ${{ secrets.WEBFLOW_ACCESS_TOKEN }}

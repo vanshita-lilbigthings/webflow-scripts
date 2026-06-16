@@ -18,15 +18,7 @@ const client = axios.create({
 
 async function waitForJsDelivr(fileName, commitSha) {
   const url = `https://cdn.jsdelivr.net/gh/${REPO}@${commitSha}/dist/${fileName}`;
-
-  // Purge CDN cache to force jsDelivr to re-fetch from GitHub
-  const purgeUrl = url.replace('cdn.jsdelivr.net', 'purge.jsdelivr.net');
-  try {
-    await fetch(purgeUrl);
-    console.log(`Purged jsDelivr cache for ${fileName}`);
-  } catch (err) {
-    console.warn(`jsDelivr purge failed for ${fileName} (non-fatal)`);
-  }
+  console.log(`Polling URL: ${url}`);
 
   const maxRetries = 20;
   const delayMs = 15000;
@@ -34,29 +26,28 @@ async function waitForJsDelivr(fileName, commitSha) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url, { method: 'HEAD' });
+      const headers = Object.fromEntries(response.headers.entries());
+      console.log(
+        `  [${fileName}] attempt ${attempt}: HTTP ${response.status}`
+      );
 
-      if (response.ok) {
-        console.log(
-          `✓ ${fileName} available on jsDelivr after ${attempt} attempt(s)`
-        );
-        return true;
+      if (!response.ok) {
+        console.log(`  Headers: ${JSON.stringify(headers)}`);
       }
 
-      console.log(
-        `Waiting for jsDelivr indexing (${attempt}/${maxRetries}) for ${fileName}`
-      );
+      if (response.ok) {
+        console.log(`✓ ${fileName} available after ${attempt} attempt(s)`);
+        return true;
+      }
     } catch (err) {
-      console.warn(
-        `Retry ${attempt}/${maxRetries} failed for ${fileName}:`,
-        err.message
-      );
+      console.warn(`  [${fileName}] attempt ${attempt}: ERROR ${err.message}`);
     }
 
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
 
   console.warn(
-    `⚠ ${fileName} not available on jsDelivr after ${maxRetries} retries. Skipping.`
+    `⚠ ${fileName} not available after ${maxRetries} retries. Skipping.`
   );
   return false;
 }
@@ -77,6 +68,7 @@ async function deploy() {
     .readdirSync('./dist')
     .filter((f) => f.endsWith('.iife.js'));
 
+  console.log(`SHA: ${SHA}`);
   console.log(`Found ${distFiles.length} scripts to deploy:`, distFiles);
 
   const registeredScripts = [];
