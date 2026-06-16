@@ -83,6 +83,7 @@ async function deploy() {
 
   for (const file of distFiles) {
     const name = file.replace('.iife.js', '');
+    const displayName = name.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
     const cdnUrl = `https://cdn.jsdelivr.net/gh/${REPO}@${SHA}/dist/${file}`;
     const version = `1.0.${Date.now()}`;
 
@@ -101,7 +102,7 @@ async function deploy() {
         hostedLocation: cdnUrl,
         integrityHash,
         canCopy: true,
-        displayName: `${name}${Date.now()}`,
+        displayName: `${displayName}${Date.now()}`,
         version,
       }
     );
