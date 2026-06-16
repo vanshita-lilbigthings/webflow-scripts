@@ -1,1 +1,5 @@
-(function(){Webflow.push(function(){console.log(`test script loaded again!`)})})();
+(function () {
+  Webflow.push(function () {
+    console.log(`test script loaded again!`);
+  });
+})();

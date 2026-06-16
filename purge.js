@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 const REPO = 'vanshita-lilbigthings/webflow-scripts';
-const SHA = process.env.GITHUB_SHA ?? 'main';
+const SHA = process.env.DEPLOY_SHA ?? 'main';
 
 async function purgeAll() {
   const distFiles = fs
