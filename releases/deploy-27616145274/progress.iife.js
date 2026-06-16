@@ -1,0 +1,1 @@
+(function(){Webflow.push(function(){let e=document.createElement(`div`);e.style.cssText=`position:fixed;top:0;left:0;height:3px;background:#4353FF;z-index:9999;width:0%;transition:width 0.1s;`,document.body.appendChild(e),window.addEventListener(`scroll`,function(){let t=window.scrollY/(document.documentElement.scrollHeight-window.innerHeight)*100;e.style.width=t+`%`})})})();
