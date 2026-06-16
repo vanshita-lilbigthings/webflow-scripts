@@ -16,7 +16,7 @@ const client = axios.create({
   },
 });
 
-async function waitForCDN(url, retries = 20, delayMs = 30000) {
+async function waitForCDN(url, retries = 10, delayMs = 10000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       await axios.get(url, { responseType: 'arraybuffer' });
