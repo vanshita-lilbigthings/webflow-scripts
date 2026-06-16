@@ -1,1 +1,12 @@
-(function(){Webflow.push(function(){let e=document.querySelector(`[data-scroll-top]`);e&&(window.addEventListener(`scroll`,function(){e.style.display=window.scrollY>300?`block`:`none`}),e.addEventListener(`click`,function(){window.scrollTo({top:0,behavior:`smooth`})}))})})();
+(function () {
+  Webflow.push(function () {
+    let e = document.querySelector(`[data-scroll-top]`);
+    e &&
+      (window.addEventListener(`scroll`, function () {
+        e.style.display = window.scrollY > 300 ? `block` : `none`;
+      }),
+      e.addEventListener(`click`, function () {
+        window.scrollTo({ top: 0, behavior: `smooth` });
+      }));
+  });
+})();

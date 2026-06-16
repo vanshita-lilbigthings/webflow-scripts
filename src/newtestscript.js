@@ -1,0 +1,3 @@
+Webflow.push(function () {
+  console.log('webflow new test script loaded');
+});
