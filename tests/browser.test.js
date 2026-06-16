@@ -2,7 +2,7 @@ const { chromium } = require('@playwright/test');
 
 const SITE_URL = 'https://ci-cd-test-site-39a07d.webflow.io/';
 const CDN_BASE =
-  'https://cdn.jsdelivr.net/gh/vanshita-lilbigthings/webflow-scripts';
+  'https://vanshita-lilbigthings.github.io/webflow-scripts/releases/';
 
 jest.setTimeout(30000);
 

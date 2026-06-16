@@ -7,6 +7,8 @@ const SITE_ID = process.env.WEBFLOW_SITE_ID;
 const SITE_TOKEN = process.env.WEBFLOW_SITE_TOKEN;
 const REPO = 'vanshita-lilbigthings/webflow-scripts';
 const SHA = process.env.GITHUB_SHA ?? 'main';
+const [OWNER, REPO_NAME] = REPO.split('/');
+const PAGES_BASE = `https://${OWNER}.github.io/${REPO_NAME}/releases/${SHA}`;
 
 const client = axios.create({
   baseURL: 'https://api.webflow.com/v2',
@@ -16,7 +18,13 @@ const client = axios.create({
   },
 });
 
-async function waitForCDN(url, retries = 10, delayMs = 10000) {
+function getLocalSRIHash(file) {
+  const content = fs.readFileSync(`./dist/${file}`);
+  const hash = crypto.createHash('sha256').update(content).digest('base64');
+  return `sha256-${hash}`;
+}
+
+async function waitForCDN(url, retries = 10, delayMs = 15000) {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       await axios.get(url, { responseType: 'arraybuffer' });
@@ -31,15 +39,6 @@ async function waitForCDN(url, retries = 10, delayMs = 10000) {
   }
 }
 
-async function getSRIHash(url) {
-  const response = await axios.get(url, { responseType: 'arraybuffer' });
-  const hash = crypto
-    .createHash('sha256')
-    .update(Buffer.from(response.data))
-    .digest('base64');
-  return `sha256-${hash}`;
-}
-
 async function deploy() {
   const distFiles = fs
     .readdirSync('./dist')
@@ -47,35 +46,23 @@ async function deploy() {
 
   console.log(`Found ${distFiles.length} scripts to deploy:`, distFiles);
 
-  console.log('\nTriggering jsDelivr indexing for this commit...');
-  try {
-    await axios.get(
-      `https://data.jsdelivr.net/v1/package/gh/${REPO}@${SHA}/flat`
-    );
-    console.log('Indexing triggered.');
-  } catch (_) {
-    console.log('Indexing trigger failed (non-fatal), continuing...');
-  }
-
-  console.log('Waiting for CDN to serve all files...');
+  console.log('\nWaiting for GitHub Pages to serve all files...');
   await Promise.all(
-    distFiles.map((file) =>
-      waitForCDN(`https://cdn.jsdelivr.net/gh/${REPO}@${SHA}/dist/${file}`)
-    )
+    distFiles.map((file) => waitForCDN(`${PAGES_BASE}/${file}`))
   );
-  console.log('All CDN files ready.\n');
+  console.log('All files ready.\n');
 
   const registeredScripts = [];
 
   for (const file of distFiles) {
     const name = file.replace('.iife.js', '');
-    const cdnUrl = `https://cdn.jsdelivr.net/gh/${REPO}@${SHA}/dist/${file}`;
+    const cdnUrl = `${PAGES_BASE}/${file}`;
     const version = `1.0.${Date.now()}`;
 
     console.log(`Deploying ${name}...`);
     console.log(`CDN URL: ${cdnUrl}`);
 
-    const integrityHash = await getSRIHash(cdnUrl);
+    const integrityHash = getLocalSRIHash(file);
     console.log(`Hash: ${integrityHash}`);
 
     console.log('Registering script...');
